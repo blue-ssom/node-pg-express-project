@@ -25,8 +25,8 @@ app.use('/login', loginRouter);
 const accountApi = require("./src/routes/account") // account.js파일 import
 app.use("/account", accountApi)
 
-// const postApi = require("./src/routes/post") // post.js파일 import
-// app.use("/post", postApi)
+const postApi = require("./src/routes/post") // post.js파일 import
+app.use("/post", postApi)
 
 // const commentApi = require("./src/routes/comment") // comment.js파일 import
 // app.use("/comment", commentApi)
