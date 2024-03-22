@@ -17,8 +17,8 @@ function checkRequiredField(value, fieldName) {
     }
 
     // 최대 길이 검사
-    if (value.length > 8) {
-    throw new Error(`${fieldName}는 최대 8글자를 초과할 수 없습니다.`);
+    if (value.length > 12) {
+    throw new Error(`${fieldName}는 최대 10글자를 초과할 수 없습니다.`);
     }
 }
 // 아이디 중복 확인

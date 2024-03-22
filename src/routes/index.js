@@ -28,6 +28,10 @@ router.post("/", async (req, res) => {
         if(row.length === 0){
             throw new Error("회원정보가 존재하지 않습니다.")
         }
+
+        // 세션 정보 저장
+        req.session.userIdx = row[0].idx;
+        console.log("로그인 후 저장된 세션 :" , req.session.userIdx)
         
         result.success = true
         result.message = "로그인 성공!";
