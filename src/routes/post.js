@@ -180,6 +180,13 @@ router.delete('/:postIdx', async(req, res) => {
         // DB 후처리
         const row = deletePostResult.rows;
 
+        // post_category 테이블에서도 해당 게시글 정보 삭제
+        const deletePostCategorySQL = `
+            DELETE FROM scheduler.post_category
+            WHERE post_idx = $1
+        `;
+        await pool.query(deletePostCategorySQL, [postIdx]);
+
         if (row.length === 0) {
             throw new Error("게시글 삭제에 실패하였습니다.");
         }
@@ -218,22 +225,20 @@ router.post('/:postIdx/like', async (req, res) => {
             throw new Error("이미 좋아요를 누르셨습니다.");
         }
 
-        // DB통신
+        // DB통신: 좋아요 추가
         const likeInsertSQL = `INSERT INTO scheduler.post_likes (post_idx, user_idx) VALUES ($1, $2);`;
-        const likeInsertResult = await pool.query(likeInsertSQL, [postId, sessionUserIdx]);
+        await pool.query(likeInsertSQL, [postIdx, sessionUserIdx]);
 
-        // DB 후처리
-        const row = likeInsertResult.rows;
+        // DB통신: 좋아요 수 업데이트
+        const updateLikesCountSQL = `
+            UPDATE scheduler.posts
+            SET likes_count = likes_count + 1
+            WHERE post_idx = $1;
+        `;
+        await pool.query(updateLikesCountSQL, [postIdx]);
 
-        if (row.length === 0) {
-            throw new Error("게시글 좋아요 누르기에 실패하였습니다.");
-        }
-
-        // 결과 설정
         result.success = true;
         result.message = "게시글 좋아요 누르기 성공";
-        result.data = insertedLike;
-
     } catch (e) {
         result.message = e.message;
     } finally {
