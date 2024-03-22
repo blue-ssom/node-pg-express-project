@@ -1,7 +1,7 @@
 // 로그인 API
 
 const router = require("express").Router() // express 안에 있는 Router만 import
-const client = require('../../database/db') // postgreSQL연결
+const pool = require('../../database/db') // postgreSQL연결
 const utils = require('../utils');
 
 // 로그인 라우트
@@ -20,7 +20,7 @@ router.post("/", async (req, res) => {
 
         // DB통신
         const sql = `SELECT * FROM scheduler.user WHERE id = $1 AND password = $2`;
-        const data = await client.query(sql, [id, password]);
+        const data = await pool.query(sql, [id, password]);
 
         // DB 후처리
         const row = data.rows

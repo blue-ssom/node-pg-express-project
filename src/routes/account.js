@@ -1,7 +1,7 @@
 // 계정과 관련된 API
 
 const router = require("express").Router() // express 안에 있는 Router만 import
-const client = require("../../database/db");
+const pool = require("../../database/db");
 const utils = require('../utils');
 
 // 아이디 찾기
@@ -21,7 +21,7 @@ router.get('/find-id', async(req, res) => {
 
         // DB통신
         const sql = `SELECT id FROM scheduler.user WHERE name = $1 AND phonenumber = $2`;
-        const data = await client.query(sql, [name, phoneNumber]);
+        const data = await pool.query(sql, [name, phoneNumber]);
 
         // DB 후처리
         const row = data.rows
@@ -53,13 +53,13 @@ router.get('/find-password', async(req, res) => {
     try {
 
         // 예외처리
-        exceptions.checkRequiredField(id, "아이디")
-        exceptions.checkRequiredField(name, "이름")
-        exceptions.checkRequiredField(phoneNumber, "전화번호")
+        utils.checkRequiredField(id, "아이디")
+        utils.checkName(name, "이름")
+        utils.checkPhoneNumber(phoneNumber, "전화번호")
 
         // DB통신
         const sql = `SELECT password FROM scheduler.user WHERE id = $1 AND name = $2 AND phoneNumber = $3`;
-        const data = await client.query(sql, [id, name, phoneNumber]);
+        const data = await pool.query(sql, [id, name, phoneNumber]);
 
         // DB 후처리
         const row = data.rows
@@ -77,7 +77,6 @@ router.get('/find-password', async(req, res) => {
    } finally {
        res.send(result);
    }
-
 });
 
 // 특정 user 정보 보기
@@ -93,15 +92,14 @@ router.get('/:idx', async(req, res) => {
         }
    
    try {
-
         // 예외처리
-        // if (requestedUserIdx !== sessionUserIdx) {
-        //   throw new Error("잘못된 접근입니다.")   // 세션이 없는 경우
-        // }
+        if (requestedUserIdx !== sessionUserIdx) {
+          throw new Error("잘못된 접근입니다.")   // 세션이 없는 경우
+        }
 
         // DB통신
         const sql = `SELECT * FROM scheduler.user WHERE idx = $1`;
-        const data = await client.query(sql, [sessionUserIdx]);
+        const data = await pool.query(sql, [sessionUserIdx]);
 
         // DB 후처리
         const row = data.rows
@@ -160,7 +158,7 @@ router.post('/', async(req, res) => {
             VALUES ($1, $2, $3, $4, $5, $6)
         `;
 
-        const data = await client.query(query, [id, password, name, phoneNumber, email, address]);
+        const data = await pool.query(query, [id, password, name, phoneNumber, email, address]);
 
         // DB 후처리
         const row = data.rows
@@ -222,7 +220,7 @@ router.put('/', async(req, res) => {
             WHERE idx = $6
         `;
     
-        const data = await client.query(sql, [password, name, phoneNumber, email, address, sessionUserIdx]);
+        const data = await pool.query(sql, [password, name, phoneNumber, email, address, sessionUserIdx]);
 
         // DB 후처리
         const row = data.rows
@@ -264,7 +262,7 @@ router.delete('/', async(req, res) => {
             WHERE idx = $1
         `;
 
-        const data = await client.query(sql, [sessionUserIdx]);
+        const data = await pool.query(sql, [sessionUserIdx]);
 
         // DB 후처리
         const row = data.rows
