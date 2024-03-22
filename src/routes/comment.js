@@ -48,5 +48,52 @@ router.get('/:postIdx', async(req, res) => {
 
 });
 
+// 댓글 추가
+router.post('/:postIdx', async(req, res) => {
+    const postIdx = req.params.postIdx; // 사용자가 입력한 PostIdx
+    const sessionUserIdx = req.session.userIdx; // 세션에 저장된 사용자 idx
+    console.log("댓글 추가하기 세션: ", sessionUserIdx)
+    
+    const { content } = req.body
+    const result = {
+        "success" : false,
+        "message" : "",
+        "data" : null
+    }
+
+    try {
+
+        // 예외처리
+        // if (!sessionUserIdx) {
+        //   throw new Error("잘못된 접근입니다.")   // 세션이 없는 경우
+        // } 
+
+        checkContent(content);
+
+        // DB통신: 댓글 추가
+        const insertCommentSQL = `
+            INSERT INTO scheduler.comment (post_idx, user_idx, content, creationdate, updationdate)
+            VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        `;
+        const insertCommentResult = await pool.query(insertCommentSQL, [postIdx, sessionUserIdx, content]);
+
+        // 결과 설정
+        result.success = true;
+        result.message = "댓글 추가 성공";
+        result.data = insertCommentResult.rows[0];
+        
+    } catch(e) {
+        result.message = e.message;
+    } finally {
+        res.send(result);
+    }
+
+});
+
+// 댓글 수정
+// 댓글 삭제하기
+// 댓글 좋아요
+// 댓글 좋아요 취소
+
 // export 작업
-module.exports = router// 댓글과 관련된 API
+module.exports = router
