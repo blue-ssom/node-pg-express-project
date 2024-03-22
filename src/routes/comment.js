@@ -91,6 +91,44 @@ router.post('/:postIdx', async(req, res) => {
 });
 
 // 댓글 수정
+router.put('/:postIdx/:commentIdx', async (req, res) => {
+    const postIdx = req.params.postIdx; // 게시글 ID
+    const commentIdx = req.params.commentIdx; // 댓글 ID
+    const { content } = req.body; // 수정된 댓글 내용
+
+    const result = {
+        "success": false,
+        "message": "",
+        "data": null
+    };
+
+    try {
+        // DB통신: 댓글 수정
+        const updateCommentSQL = `
+            UPDATE scheduler.comment
+            SET content = $1,
+                updationdate = CURRENT_TIMESTAMP
+            WHERE comment_idx = $2 AND post_idx = $3;
+        `;
+        const updateCommentResult = await pool.query(updateCommentSQL, [content, commentIdx, postIdx]);
+
+        // DB 후처리
+        const row = updateCommentResult.rows;
+
+        if (row.length === 0) {
+            throw new Error("댓글 수정에 실패하였습니다.");
+        }
+
+        // 결과 설정
+        result.success = true;
+        result.message = "댓글 수정 성공";
+    } catch (e) {
+        result.message = e.message;
+    } finally {
+        res.send(result);
+    }
+});
+
 // 댓글 삭제하기
 // 댓글 좋아요
 // 댓글 좋아요 취소
