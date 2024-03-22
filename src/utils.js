@@ -1,4 +1,4 @@
-const client = require("../database/db");
+const pool = require("../database/db");
 
 // 아이디와 비밀번호 유효성 검사
 function checkRequiredField(value, fieldName) {
@@ -60,11 +60,25 @@ function checkPhoneNumber(value){
 
 }
 
+// 이메일 유효성 검사
+function checkEmail(value){
+    if (value === null || value === undefined || value === "") {
+        throw new Error(`이메일을 입력해주세요.`);
+    }
+
+    const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!regex.test(value)) {
+        throw new Error("올바른 이메일 형식이 아닙니다.");
+    }
+
+    // 길이 제한 - 사용자 이름, 도메인 이름, 최상위 도메인(TLD) ?
+}
+
 // 아이디 중복 확인
 async function checkDuplicateId(id) {
     try {
         const sql = `SELECT COUNT(*) FROM scheduler.user WHERE id = $1`;
-        const data = await client.query(sql, [id]);
+        const data = await pool.query(sql, [id]);
         const count = parseInt(data.rows[0].count);
         return count > 0;
     } catch (error) {
@@ -76,7 +90,7 @@ async function checkDuplicateId(id) {
 async function checkDuplicateEmail(email) {
     try{
         const sql = `SELECT COUNT(*) FROM scheduler.user WHERE email = $1`;
-        const data = await client.query(sql, [email]);
+        const data = await pool.query(sql, [email]);
         const count = parseInt(data.rows[0].count);
         return count > 0;
     } catch(error) {
@@ -88,11 +102,36 @@ async function checkDuplicateEmail(email) {
 async function checkDuplicatePhoneNumber(phoneNumber) {
     try {
         const sql = `SELECT COUNT(*) FROM scheduler.user WHERE phonenumber = $1`;
-        const data = await client.query(sql, [phoneNumber]);
+        const data = await pool.query(sql, [phoneNumber]);
         const count = parseInt(data.rows[0].count);
         return count > 0;
     } catch (error) {
         throw new Error("사용 중인 전화번호입니다.");
+    }
+}
+
+// 제목 유효성 검사
+async function checkTitle(title){
+    if (title === null || title === undefined || title === "") {
+        throw new Error(`제목을 입력해주세요.`);
+    }
+
+    // 제목의 최대 길이 확인
+    if (title.length > 50) {
+        throw new Error("제목은 50자를 초과할 수 없습니다.");
+    }
+
+}
+
+// 내용 유효성 검사
+async function checkContent(content){
+    if (content === null || content === undefined || content === "") {
+        throw new Error(`내용을 입력해주세요.`);
+    }
+
+     // 내용의 최대 길이 확인
+     if (content.length > 100) {
+        throw new Error("내용은 100자를 초과할 수 없습니다.");
     }
 }
 
@@ -102,5 +141,7 @@ module.exports = {
     checkPhoneNumber,
     checkDuplicateId,
     checkDuplicateEmail,
-    checkDuplicatePhoneNumber
+    checkDuplicatePhoneNumber,
+    checkTitle,
+    checkContent
 };

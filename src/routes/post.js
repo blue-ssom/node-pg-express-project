@@ -63,8 +63,9 @@ router.post('/', async(req, res) => {
         // if (!sessionUserIdx) {
         //   throw new Error("잘못된 접근입니다.")   // 세션이 없는 경우
         // } 
-        checkRequiredField(title, "제목");
-        checkRequiredField(content, "내용");
+
+        checkTitle(title);
+        checkContent(content);
 
         // DB통신
         const postInsertInfoSQL = `
@@ -72,27 +73,18 @@ router.post('/', async(req, res) => {
         VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         `;
         const postInsertResult = await pool.query(postInsertInfoSQL, [sessionUserIdx, title, content]);
-        const postId = postInsertResult.rows[0].post_idx; // 새로 추가된 게시글의 ID
+        const postIdx = postInsertResult.rows[0].post_idx; // 새로 추가된 게시글의 ID
 
         // 카테고리 추가
         const categoryInsertSQL = `
-            INSERT INTO scheduler.post_category (post_idx, category_id)
+            INSERT INTO scheduler.post_category (post_idx, category_idx)
             VALUES ($1, $2);
         `;
-        const categoryInsertResult = await pool.query(categoryInsertSQL, [postId, categoryId]);
-
-        // DB 후처리
-        const row = categoryInsertResult.rows;
-
-        if (row.length === 0) {
-            throw new Error("카테고리 추가에 실패하였습니다.");
-        }
+        await pool.query(categoryInsertSQL, [postIdx, categoryIdx]);
 
         result.success = true;
         result.message = "게시글 작성 성공";
-        result.data = postInsertResult.rows[0];
-
-        
+        result.data = updatePostResult.rows[0];
     } catch(e) {
         result.message = e.message;
     } finally {
@@ -106,7 +98,7 @@ router.put('/:postIdx', async(req, res) => {
     const sessionUserIdx = req.session.userIdx; // 세션에 저장된 사용자 idx
     console.log("게시글 수정하기 세션: ", sessionUserIdx)
     
-    const { title, content, categoryId } = req.body
+    const { title, content, categoryIdx } = req.body
     const result = {
         "success" : false,
         "message" : "",
@@ -120,8 +112,8 @@ router.put('/:postIdx', async(req, res) => {
         //   throw new Error("잘못된 접근입니다.")   // 세션이 없는 경우
         // } 
 
-        checkRequiredField(title, "제목");
-        checkRequiredField(content, "내용");
+        checkTitle(title);
+        checkContent(content);
 
         // DB통신
         const updatePostSQL = `
@@ -134,10 +126,10 @@ router.put('/:postIdx', async(req, res) => {
         // 카테고리 수정
         const updateCategorySQL = `
             UPDATE scheduler.post_category
-            SET category_id = $1
+            SET category_idx = $1
             WHERE post_idx = $2
         `;
-        const updateCategoryResult = await pool.query(updateCategorySQL, [categoryId, postIdx]);
+        const updateCategoryResult = await pool.query(updateCategorySQL, [categoryIdx, postIdx]);
 
         // DB 후처리
         const row = updatePostResult.rows;
@@ -148,6 +140,7 @@ router.put('/:postIdx', async(req, res) => {
 
         result.success = true;
         result.message = "게시글 수정 성공";
+        result.data = postInsertResult.rows[0];
         
     } catch(e) {
         result.message = e.message;
