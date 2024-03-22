@@ -95,6 +95,8 @@ router.put('/:postIdx/:commentIdx', async (req, res) => {
     const postIdx = req.params.postIdx; // 게시글 ID
     const commentIdx = req.params.commentIdx; // 댓글 ID
     const { content } = req.body; // 수정된 댓글 내용
+    const sessionUserIdx = req.session.userIdx; // 세션에 저장된 사용자 idx
+    console.log("댓글 수정하기 세션: ", sessionUserIdx)
 
     const result = {
         "success": false,
@@ -103,25 +105,32 @@ router.put('/:postIdx/:commentIdx', async (req, res) => {
     };
 
     try {
-        // DB통신: 댓글 수정
-        const updateCommentSQL = `
-            UPDATE scheduler.comment
-            SET content = $1,
-                updationdate = CURRENT_TIMESTAMP
-            WHERE comment_idx = $2 AND post_idx = $3;
-        `;
-        const updateCommentResult = await pool.query(updateCommentSQL, [content, commentIdx, postIdx]);
+        // 예외처리
+            // if (!sessionUserIdx) {
+            //   throw new Error("잘못된 접근입니다.")   // 세션이 없는 경우
+            // } 
 
-        // DB 후처리
-        const row = updateCommentResult.rows;
+            checkContent(content);
+            
+            // DB통신: 댓글 수정
+            const updateCommentSQL = `
+                UPDATE scheduler.comment
+                SET content = $1,
+                    updationdate = CURRENT_TIMESTAMP
+                WHERE comment_idx = $2 AND post_idx = $3;
+            `;
+            const updateCommentResult = await pool.query(updateCommentSQL, [content, commentIdx, postIdx]);
 
-        if (row.length === 0) {
-            throw new Error("댓글 수정에 실패하였습니다.");
-        }
+            // DB 후처리
+            const row = updateCommentResult.rows;
 
-        // 결과 설정
-        result.success = true;
-        result.message = "댓글 수정 성공";
+            if (row.length === 0) {
+                throw new Error("댓글 수정에 실패하였습니다.");
+            }
+
+            // 결과 설정
+            result.success = true;
+            result.message = "댓글 수정 성공";
     } catch (e) {
         result.message = e.message;
     } finally {
@@ -130,6 +139,57 @@ router.put('/:postIdx/:commentIdx', async (req, res) => {
 });
 
 // 댓글 삭제하기
+router.delete('/:postIdx/:commentIdx', async (req, res) => {
+    const postIdx = req.params.postIdx; // 게시글 ID
+    const commentIdx = req.params.commentIdx; // 댓글 ID
+    const sessionUserIdx = req.session.userIdx; // 세션에 저장된 사용자 idx
+    console.log("댓글 삭제하기 세션: ", sessionUserIdx)
+
+    const result = {
+        "success": false,
+        "message": "",
+        "data": null
+    };
+
+    try {
+       
+        // 세션에 사용자 ID가 없는 경우
+        // if (!sessionUserIdx) {
+        //     throw new Error("잘못된 접근입니다.");
+        // }
+
+        // 해당 게시물의 댓글 조회
+        const commentQuery = `
+            SELECT * 
+            FROM scheduler.comment 
+            WHERE post_idx = $1 AND comment_idx = $2
+        `;
+        const commentResult = await pool.query(commentQuery, [postIdx, commentIdx]);
+
+        // 댓글이 없는 경우
+        if (commentResult.rows.length === 0) {
+            throw new Error("해당 댓글을 찾을 수 없습니다.");
+        }
+
+        // 댓글 삭제 쿼리 실행
+        const deleteQuery = `
+            DELETE FROM scheduler.comment 
+            WHERE post_idx = $1 AND comment_idx = $2
+        `;
+        await pool.query(deleteQuery, [postIdx, commentIdx]);
+
+        // 결과 설정
+        result.success = true;
+        result.message = "댓글 삭제 성공";
+    } catch (error) {
+        // 오류 발생 시
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+
+});
 // 댓글 좋아요
 // 댓글 좋아요 취소
 
