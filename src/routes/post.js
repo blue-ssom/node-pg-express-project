@@ -270,11 +270,17 @@ router.delete('/:postId/like', async (req, res) => {
         const likeDeleteResult = await pool.query(likeDeleteSQL, [postIdx, sessionUserIdx]);
 
         // DB 후처리
-        const row = likeDeleteResult.rows;
-
-        if (row.length === 0) {
-            throw new Error("게시글 좋아요 누르기에 실패하였습니다.");
+        if (likeDeleteResult.rowCount === 0) {
+            throw new Error("게시글 좋아요 취소에 실패하였습니다.");
         }
+
+        // 좋아요 수 업데이트
+        const updateLikesCountSQL = `
+            UPDATE scheduler.posts
+            SET likes_count = likes_count - 1
+            WHERE post_idx = $1 AND likes_count > 0;
+        `;
+        const updateLikesCountResult = await pool.query(updateLikesCountSQL, [postIdx]);
 
         // 결과 설정
         result.success = true;
