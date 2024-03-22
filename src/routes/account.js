@@ -135,23 +135,23 @@ router.post('/', async(req, res) => {
     try {
 
         // 예외처리
-        exceptions.checkRequiredField(id, "아이디")
-        exceptions.checkRequiredField(password, "비밀번호")
-        exceptions.checkRequiredField(name, "이름")
-        exceptions.checkRequiredField(phoneNumber, "전화번호")
-        exceptions.checkRequiredField(email, "이메일")
-        exceptions.checkRequiredField(address, "주소")
+        utils.checkRequiredField(id, "아이디")
+        await utils.checkDuplicateId(id); // 아이디 중복 확인
 
-        // DB통신
-        // 1. 아이디 중복 확인
-        await utils.checkDuplicateId(id);
-        
-        // 2. 이메일 중복 확인
-        await utils.checkDuplicateEmail(email);
+        utils.checkRequiredField(password, "비밀번호")
+
+        utils.checkName(name, "이름")
+
+        utils.checkPhoneNumber(phoneNumber, "전화번호")
+        await utils.checkDuplicatePhoneNumber(phoneNumber); // 전화번호 중복 확인
+
+        utils.checkEmail(email, "이메일")
+        await utils.checkDuplicateEmail(email); // 이메일 중복 확인
+
+        if(address === null || address ===undefined || address === ""){
+            throw new Error("주소를 입력하세요.")
+        }
       
-        // 3. 전화번호 중복 확인
-        await utils.checkDuplicatePhoneNumber(phoneNumber); 
-
         // DB통신
         const sql = `
             INSERT INTO scheduler.user (id, password, name, phonenumber, email, address) 
@@ -197,21 +197,22 @@ router.put('/', async(req, res) => {
         //   throw new Error("잘못된 접근입니다.")   // 세션이 없는 경우
         // }
 
-        exceptions.checkRequiredField(password, "비밀번호")
-        exceptions.checkRequiredField(name, "이름")
-        exceptions.checkRequiredField(phoneNumber, "전화번호")
-        exceptions.checkRequiredField(email, "이메일")
-        exceptions.checkRequiredField(address, "주소")
+        utils.checkRequiredField(id, "아이디")
+        await utils.checkDuplicateId(id); // 아이디 중복 확인
 
-        // DB통신
-        // 1. 아이디 중복 확인
-        await utils.checkDuplicateId(id);
-    
-        // 2. 이메일 중복 확인
-        await utils.checkDuplicateEmail(email);
-    
-        // 3. 전화번호 중복 확인
-        await utils.checkDuplicatePhoneNumber(phoneNumber);
+        utils.checkRequiredField(password, "비밀번호")
+
+        utils.checkName(name, "이름")
+
+        utils.checkPhoneNumber(phoneNumber, "전화번호")
+        await utils.checkDuplicatePhoneNumber(phoneNumber); // 전화번호 중복 확인
+
+        utils.checkEmail(email, "이메일")
+        await utils.checkDuplicateEmail(email); // 이메일 중복 확인
+
+        if(address === null || address ===undefined || address === ""){
+            throw new Error("주소를 입력하세요.")
+        }
 
         // 내 정보 수정 진행
         const sql = `
@@ -238,7 +239,7 @@ router.put('/', async(req, res) => {
 
 });
 
-// 내 회원 탈퇴(아 DB에 cascade 설정 안해줬다)
+// 내 회원 탈퇴(아 DB에 CASCADE 설정 안해줬다)
 router.delete('/', async(req, res) => {
     const sessionUserIdx = req.session.userIdx; // 세션에 저장된 사용자 idx
     console.log("회원 탈퇴 세션: ", sessionUserIdx);
