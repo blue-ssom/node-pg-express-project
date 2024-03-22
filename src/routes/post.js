@@ -262,6 +262,17 @@ router.delete('/:postId/like', async (req, res) => {
         //     throw new Error("잘못된 접근입니다.");
         // }
 
+        // 좋아요 여부 확인
+        const likeCheckSQL = `
+        SELECT * FROM scheduler.post_likes
+        WHERE post_idx = $1 AND user_idx = $2;
+        `;
+        const likeCheckResult = await pool.query(likeCheckSQL, [postIdx, sessionUserIdx]);
+
+        // 만약 좋아요를 누르지 않은 경우, 오류 발생
+        if (likeCheckResult.rows.length === 0) {
+        throw new Error("게시글에 좋아요를 누른 적이 없습니다.");
+        }
         // DB통신: 게시글 좋아요 취소
         const likeDeleteSQL = `
             DELETE FROM scheduler.post_likes
