@@ -211,7 +211,7 @@ router.post('/:commentIdx/like', async (req, res) => {
         //     throw new Error("잘못된 접근입니다.");
         // }
         
-         // 좋아요 여부 확인
+        // 좋아요 여부 확인
         const likeCheckSQL = `
             SELECT * FROM scheduler.comment_likes
             WHERE comment_idx = $1 AND user_idx = $2;
@@ -229,7 +229,7 @@ router.post('/:commentIdx/like', async (req, res) => {
         `;
         await pool.query(likeInsertSQL, [commentIdx, sessionUserIdx]);
 
-        // DB통신: 댓글의 좋아요 수 증가
+        // 댓글의 좋아요 수 증가
         const updateLikesCountSQL = `
             UPDATE scheduler.comment
             SET likes_count = likes_count + 1
@@ -248,6 +248,60 @@ router.post('/:commentIdx/like', async (req, res) => {
 });
 
 // 댓글 좋아요 취소
+router.delete('/:commentIdx/like', async (req, res) => {
+    const commentIdx = req.params.commentIdx; // 댓글 ID
+    const sessionUserIdx = req.session.userIdx; // 세션에 저장된 사용자 ID
+    console.log("댓글 좋아요 취소 세션: ", sessionUserIdx)
+
+
+    const result = {
+        "success": false,
+        "message": "",
+        "data": null
+    };
+
+    try {
+        // 세션에 사용자 ID가 없는 경우
+        // if (!sessionUserIdx) {
+        //     throw new Error("잘못된 접근입니다.");
+        // }
+
+        // 좋아요 여부 확인
+        const likeCheckSQL = `
+            SELECT * FROM scheduler.comment_likes
+            WHERE comment_idx = $1 AND user_idx = $2;
+        `;
+        const likeCheckResult = await pool.query(likeCheckSQL, [commentIdx, sessionUserIdx]);
+
+        if (likeCheckResult.rows.length === 0) {
+            throw new Error("댓글에 좋아요를 누른 적이 없습니다.");
+        }
+
+        // DB통신: 댓글 좋아요 삭제
+        const deleteLikeSQL = `
+            DELETE FROM scheduler.comment_likes
+            WHERE comment_idx = $1 AND user_idx = $2;
+        `;
+        await pool.query(deleteLikeSQL, [commentIdx, sessionUserIdx]);
+
+        // 댓글의 좋아요 수 감소
+        const updateLikesCountSQL = `
+            UPDATE scheduler.comment
+            SET likes_count = likes_count - 1
+            WHERE comment_idx = $1 likes_count > 0;
+        `;
+        await pool.query(updateLikesCountSQL, [commentIdx]);
+
+        // 결과 설정
+        result.success = true;
+        result.message = "댓글 좋아요를취소 성공";
+
+    } catch (error) {
+        result.message = error.message;
+    } finally {
+        res.send(result);
+    }
+});
 
 // export 작업
 module.exports = router
