@@ -22,8 +22,8 @@ app.use(session({
 const loginRouter = require('./src/routes/index');  // index.js파일 import
 app.use('/login', loginRouter);
 
-// const accountApi = require("./src/routes/account") // account.js파일 import
-// app.use("/account", accountApi)
+const accountApi = require("./src/routes/account") // account.js파일 import
+app.use("/account", accountApi)
 
 // const postApi = require("./src/routes/post") // post.js파일 import
 // app.use("/post", postApi)

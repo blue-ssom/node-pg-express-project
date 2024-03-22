@@ -3,7 +3,6 @@
 const router = require("express").Router() // express 안에 있는 Router만 import
 const client = require("../../database/db");
 const utils = require('../utils');
-const exceptions = require('../exceptions');
 
 // 아이디 찾기
 router.get('/find-id', async(req, res) => {
@@ -17,8 +16,8 @@ router.get('/find-id', async(req, res) => {
     try {
 
         // 예외처리
-        exceptions.checkRequiredField(name, "이름")
-        exceptions.checkRequiredField(phoneNumber, "전화번호")
+        utils.checkName(name)
+        utils.checkPhoneNumber(phoneNumber)
 
         // DB통신
         const sql = `SELECT id FROM scheduler.user WHERE name = $1 AND phonenumber = $2`;
